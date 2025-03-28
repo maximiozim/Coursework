@@ -9,12 +9,13 @@ public class RegisterFrame extends JFrame {
     private JTextField lastNameField;
     private JTextField phoneField;
     private JTextField emailField;
+    private JTextField dobField;
     private JPasswordField passwordField;
     private JPasswordField confirmPasswordField;
 
     public RegisterFrame() {
         setTitle("MediAccess - Реєстрація");
-        setSize(400, 400);
+        setSize(400, 450);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new GridBagLayout());
@@ -31,6 +32,8 @@ public class RegisterFrame extends JFrame {
         phoneField = new JTextField(20);
         JLabel emailLabel = new JLabel("Email:");
         emailField = new JTextField(20);
+        JLabel dobLabel = new JLabel("Дата народження (yyyy-MM-dd):");
+        dobField = new JTextField(20);
         JLabel passLabel = new JLabel("Пароль:");
         passwordField = new JPasswordField(20);
         JLabel confirmPassLabel = new JLabel("Підтвердіть пароль:");
@@ -63,19 +66,24 @@ public class RegisterFrame extends JFrame {
         add(emailField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 4;
+        add(dobLabel, gbc);
+        gbc.gridx = 1;
+        add(dobField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 5;
         add(passLabel, gbc);
         gbc.gridx = 1;
         add(passwordField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 5;
+        gbc.gridx = 0; gbc.gridy = 6;
         add(confirmPassLabel, gbc);
         gbc.gridx = 1;
         add(confirmPasswordField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
         add(registerButton, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 7;
+        gbc.gridx = 0; gbc.gridy = 8;
         add(backButton, gbc);
 
         setVisible(true);
@@ -86,6 +94,7 @@ public class RegisterFrame extends JFrame {
         String lastName = lastNameField.getText();
         String phone = phoneField.getText();
         String email = emailField.getText();
+        String dobText = dobField.getText();
         String password = new String(passwordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
 
@@ -94,20 +103,34 @@ public class RegisterFrame extends JFrame {
             return;
         }
 
+        String confirmationCode = String.valueOf((int)(Math.random() * 1000000));
+        DatabaseManager.createConfirmationCode(email, confirmationCode);
+        DatabaseManager.sendEmail(email, confirmationCode);
+
+        String inputCode = JOptionPane.showInputDialog(this, "Введіть код, який надіслано на email:");
+        if (inputCode == null || !DatabaseManager.validateConfirmationCode(email, inputCode)) {
+            JOptionPane.showMessageDialog(this, "Невірний або прострочений код!", "Помилка", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try (Connection conn = DatabaseManager.getConnection();
              CallableStatement stmt = conn.prepareCall("{call sp_RegisterUser(?, ?, ?, ?, ?, ?)}")) {
+
+            String hashedPassword = DatabaseManager.hashPassword(password);
+            Date dateOfBirth = Date.valueOf(dobText);
+
             stmt.setString(1, firstName);
             stmt.setString(2, lastName);
-            stmt.setDate(3, Date.valueOf("2000-01-01"));  // 🟢 Тут потрібно змінити на введену дату
+            stmt.setDate(3, dateOfBirth);
             stmt.setString(4, phone);
             stmt.setString(5, email);
-            stmt.setString(6, password);
-            stmt.execute();
+            stmt.setString(6, hashedPassword);
 
+            stmt.execute();
             JOptionPane.showMessageDialog(this, "Акаунт створено!", "Успіх", JOptionPane.INFORMATION_MESSAGE);
             dispose();
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Помилка реєстрації!", "Помилка", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException | IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, "Помилка реєстрації або некоректна дата!", "Помилка", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

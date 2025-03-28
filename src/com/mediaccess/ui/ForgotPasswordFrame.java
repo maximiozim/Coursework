@@ -7,33 +7,36 @@ public class ForgotPasswordFrame extends JFrame {
     public ForgotPasswordFrame() {
         setTitle("Відновлення пароля");
         setSize(400, 200);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new GridLayout(3, 2, 10, 10));
 
         JTextField emailField = new JTextField();
-        JButton sendCodeBtn = new JButton("Надіслати код");
+        JButton sendButton = new JButton("Надіслати код");
 
-        sendCodeBtn.addActionListener(e -> {
-            String email = emailField.getText().trim();
+        sendButton.addActionListener(e -> {
+            String email = emailField.getText();
+            if (email.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Введіть email", "Помилка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             String code = DatabaseManager.requestPasswordReset(email);
-
             if (code != null) {
                 DatabaseManager.sendEmail(email, code);
-                JOptionPane.showMessageDialog(this, "Код надіслано на пошту!", "Успіх", JOptionPane.INFORMATION_MESSAGE);
-                new ResetPasswordFrame(email); // Передаємо email
+                JOptionPane.showMessageDialog(this, "Код надіслано на email", "Успіх", JOptionPane.INFORMATION_MESSAGE);
+                new ResetPasswordFrame(email);
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Email не знайдено!", "Помилка", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Email не знайдено або помилка", "Помилка", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        JPanel panel = new JPanel(new GridLayout(3, 1));
-        panel.add(new JLabel("Введіть ваш email:"));
-        panel.add(emailField);
-        panel.add(sendCodeBtn);
+        add(new JLabel("Email:"));
+        add(emailField);
+        add(new JLabel());
+        add(sendButton);
 
-        add(panel, BorderLayout.CENTER);
         setVisible(true);
     }
 }
