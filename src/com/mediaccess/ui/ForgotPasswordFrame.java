@@ -6,12 +6,17 @@ import java.awt.*;
 public class ForgotPasswordFrame extends JFrame {
     public ForgotPasswordFrame() {
         setTitle("Відновлення пароля");
-        setSize(400, 200);
+        setSize(450, 180);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new GridLayout(3, 2, 10, 10));
+        setLayout(new GridBagLayout());
 
-        JTextField emailField = new JTextField();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel emailLabel = createFixedLabel("Email:");
+        JTextField emailField = new JTextField(20);
         JButton sendButton = new JButton("Надіслати код");
 
         sendButton.addActionListener(e -> {
@@ -32,11 +37,20 @@ public class ForgotPasswordFrame extends JFrame {
             }
         });
 
-        add(new JLabel("Email:"));
-        add(emailField);
-        add(new JLabel());
-        add(sendButton);
+        gbc.gridx = 0; gbc.gridy = 0;
+        add(emailLabel, gbc);
+        gbc.gridx = 1;
+        add(emailField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
+        add(sendButton, gbc);
 
         setVisible(true);
+    }
+
+    private JLabel createFixedLabel(String text) {
+        JLabel label = new JLabel(text, SwingConstants.RIGHT);
+        label.setPreferredSize(new Dimension(180, 20));
+        return label;
     }
 }

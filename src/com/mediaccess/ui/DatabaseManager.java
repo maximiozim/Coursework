@@ -2,18 +2,23 @@ package com.mediaccess.ui;
 
 import javax.mail.*;
 import javax.mail.internet.*;
+import javax.swing.*;
 import java.sql.*;
 import java.util.Properties;
 import java.security.MessageDigest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DatabaseManager {
+    private static final Logger logger = Logger.getLogger(DatabaseManager.class.getName());
+
     static final String URL = "jdbc:sqlserver://192.168.0.207:1433;databaseName=MediAccess;integratedSecurity=true;encrypt=false;trustServerCertificate=true";
 
     static boolean testConnection() {
         try (Connection conn = getConnection()) {
             return true;
         } catch (SQLException e) {
-            System.err.println("❌ DB ERROR: " + e.getMessage());
+            logger.log(Level.SEVERE, "Помилка з'єднання з БД", e);
             return false;
         }
     }
@@ -34,6 +39,7 @@ public class DatabaseManager {
             }
             return hexString.toString();
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Помилка хешування пароля", e);
             throw new RuntimeException("Помилка хешування пароля", e);
         }
     }
@@ -41,9 +47,11 @@ public class DatabaseManager {
     static String authenticateUserAndGetRole(String email, String password) {
         try (Connection conn = getConnection();
              CallableStatement stmt = conn.prepareCall("{call sp_LoginUser(?, ?)}")) {
+
             String hashedPassword = hashPassword(password);
             stmt.setString(1, email);
             stmt.setString(2, hashedPassword);
+
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 String role = rs.getString("Role");
@@ -51,26 +59,54 @@ public class DatabaseManager {
                     return role;
                 }
             }
-            return null;
+
+            // Додаткова перевірка: можливо, пароль ще зберігається у відкритому вигляді
+            try (PreparedStatement checkPlain = conn.prepareStatement(
+                    "SELECT 1 FROM AppUsers WHERE Email = ? AND Password = ?")) {
+                checkPlain.setString(1, email);
+                checkPlain.setString(2, password); // не хеш
+                ResultSet checkRs = checkPlain.executeQuery();
+                if (checkRs.next()) {
+                    JOptionPane.showMessageDialog(null,
+                            "❗ Ваш пароль ще зберігається у відкритому вигляді.\n" +
+                                    "Змініть його для безпеки!",
+                            "Попередження", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            Logger.getLogger(DatabaseManager.class.getName()).log(Level.SEVERE, "Помилка авторизації", e);
         }
         return null;
     }
 
     static void createConfirmationCode(String email, String code) {
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "DELETE FROM PasswordResetRequests WHERE Email = ?;" +
-                             "INSERT INTO PasswordResetRequests (Email, ResetCode, ExpiryTime) VALUES (?, ?, DATEADD(MINUTE, 15, GETDATE()));")) {
-            stmt.setString(1, email);
-            stmt.setString(2, email);
-            stmt.setString(3, code);
-            stmt.executeUpdate();
+        try (Connection conn = getConnection()) {
+            // Спочатку видаляємо попередній код
+            try (PreparedStatement deleteStmt = conn.prepareStatement(
+                    "DELETE FROM PasswordResetRequests WHERE Email = ?")) {
+                deleteStmt.setString(1, email);
+                deleteStmt.executeUpdate();
+            }
+
+            // Потім вставляємо новий
+            try (PreparedStatement insertStmt = conn.prepareStatement(
+                    "INSERT INTO PasswordResetRequests (Email, ResetCode, ExpiryTime) " +
+                            "VALUES (?, ?, DATEADD(MINUTE, 15, GETDATE()))")) {
+                insertStmt.setString(1, email);
+                insertStmt.setString(2, code);
+                insertStmt.executeUpdate();
+            }
+
+            System.out.println("✅ Код підтвердження створено для " + email);
+
         } catch (SQLException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "❌ Не вдалося створити код підтвердження", "Помилка", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+
 
     static boolean validateConfirmationCode(String email, String code) {
         try (Connection conn = getConnection();
@@ -81,7 +117,7 @@ public class DatabaseManager {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Невалідний або прострочений код підтвердження", e);
             return false;
         }
     }
@@ -95,7 +131,7 @@ public class DatabaseManager {
                 return rs.getString("ResetCode");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Помилка запиту на скидання пароля", e);
         }
         return null;
     }
@@ -110,7 +146,7 @@ public class DatabaseManager {
             stmt.execute();
             return true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Помилка скидання пароля", e);
             return false;
         }
     }
@@ -139,7 +175,7 @@ public class DatabaseManager {
             message.setText("Ваш код підтвердження: " + code);
             Transport.send(message);
         } catch (MessagingException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Помилка надсилання email", e);
         }
     }
 }

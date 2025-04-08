@@ -6,14 +6,21 @@ import java.awt.*;
 public class ResetPasswordFrame extends JFrame {
     public ResetPasswordFrame(String email) {
         setTitle("Скидання пароля");
-        setSize(400, 250);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(450, 250);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(5, 2, 10, 10));
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new GridBagLayout());
 
-        JTextField codeField = new JTextField();
-        JPasswordField newPassField = new JPasswordField();
-        JPasswordField confirmField = new JPasswordField();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel codeLabel = createFixedLabel("Код підтвердження:");
+        JTextField codeField = new JTextField(20);
+        JLabel newPassLabel = createFixedLabel("Новий пароль:");
+        JPasswordField newPassField = new JPasswordField(20);
+        JLabel confirmLabel = createFixedLabel("Підтвердити пароль:");
+        JPasswordField confirmField = new JPasswordField(20);
         JButton resetBtn = new JButton("Змінити пароль");
 
         resetBtn.addActionListener(e -> {
@@ -36,15 +43,30 @@ public class ResetPasswordFrame extends JFrame {
             }
         });
 
-        add(new JLabel("Код підтвердження:"));
-        add(codeField);
-        add(new JLabel("Новий пароль:"));
-        add(newPassField);
-        add(new JLabel("Підтвердити пароль:"));
-        add(confirmField);
-        add(new JLabel()); // порожня клітинка
-        add(resetBtn);
+        int row = 0;
+        addRow(gbc, codeLabel, codeField, row++);
+        addRow(gbc, newPassLabel, newPassField, row++);
+        addRow(gbc, confirmLabel, confirmField, row++);
+
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        add(resetBtn, gbc);
 
         setVisible(true);
+    }
+
+    private JLabel createFixedLabel(String text) {
+        JLabel label = new JLabel(text, SwingConstants.RIGHT);
+        label.setPreferredSize(new Dimension(180, 20));
+        return label;
+    }
+
+    private void addRow(GridBagConstraints gbc, JLabel label, JComponent field, int row) {
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        add(label, gbc);
+        gbc.gridx = 1;
+        add(field, gbc);
     }
 }

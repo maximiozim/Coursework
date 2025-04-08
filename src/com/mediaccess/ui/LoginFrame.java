@@ -3,8 +3,11 @@ package com.mediaccess.ui;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.logging.Logger;
 
 public class LoginFrame extends JFrame {
+    private static final Logger logger = Logger.getLogger(LoginFrame.class.getName());
+
     private JTextField emailField;
     private JPasswordField passwordField;
 
@@ -29,7 +32,7 @@ public class LoginFrame extends JFrame {
             JLabel logoLabel = new JLabel(icon);
             panel.add(logoLabel);
         } catch (Exception e) {
-            System.err.println("\u274C Лого не знайдено! Перевір шлях: /com/mediaccess/ui/logo.png");
+            logger.warning("❌ Лого не знайдено! Перевір шлях: /com/mediaccess/ui/logo.png");
         }
 
         return panel;
@@ -53,8 +56,8 @@ public class LoginFrame extends JFrame {
         loginButton.setForeground(Color.WHITE);
         loginButton.addActionListener(e -> loginUser());
 
-        JLabel forgotPasswordLabel = createLinkLabel("Забули пароль?", () -> new ForgotPasswordFrame());
-        JLabel createAccountLabel = createLinkLabel("Створити акаунт", () -> new RegisterFrame());
+        JLabel forgotPasswordLabel = createLinkLabel("Забули пароль?", ForgotPasswordFrame::new);
+        JLabel createAccountLabel = createLinkLabel("Створити акаунт", RegisterFrame::new);
 
         gbc.gridx = 0; gbc.gridy = 0;
         panel.add(emailLabel, gbc);
@@ -95,8 +98,11 @@ public class LoginFrame extends JFrame {
         String email = emailField.getText();
         String password = new String(passwordField.getPassword());
 
+        logger.info("Спроба входу для: " + email);
+
         String role = DatabaseManager.authenticateUserAndGetRole(email, password);
         if (role != null && !role.equalsIgnoreCase("Login Failed")) {
+            logger.info("Успішна авторизація з роллю: " + role);
             switch (role.toLowerCase()) {
                 case "dbo": new DBOPanel(); break;
                 case "admin": new AdminPanel(); break;
@@ -107,6 +113,7 @@ public class LoginFrame extends JFrame {
             }
             dispose();
         } else {
+            logger.warning("❌ Авторизація не вдалася для: " + email);
             JOptionPane.showMessageDialog(this, "Невірний email або пароль!", "Помилка", JOptionPane.ERROR_MESSAGE);
         }
     }
