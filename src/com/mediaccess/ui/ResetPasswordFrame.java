@@ -58,7 +58,7 @@ public class ResetPasswordFrame extends JFrame {
 
     private JLabel createFixedLabel(String text) {
         JLabel label = new JLabel(text, SwingConstants.RIGHT);
-        label.setPreferredSize(new Dimension(180, 20));
+        label.setPreferredSize(new Dimension(180, 20)); // Щоб не "зжималось" в маленькому вікні
         return label;
     }
 

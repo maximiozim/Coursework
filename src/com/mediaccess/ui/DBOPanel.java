@@ -5,16 +5,28 @@ import java.awt.*;
 
 public class DBOPanel extends JFrame {
     public DBOPanel() {
-        setTitle("Панель DBO (Головний користувач)");
-        setSize(900, 600);
+        setTitle("Панель DBO");
+        setSize(400, 300);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new GridLayout(4, 1, 10, 10));
 
-        JLabel label = new JLabel("\uD83D\uDD11 Панель DBO - повний контроль над системою");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, 20));
+        JButton doctorsButton = new JButton("Переглянути лікарів");
+        JButton appointmentsButton = new JButton("Переглянути записи на прийом");
+        JButton logoutButton = new JButton("Вийти");
 
-        add(label, BorderLayout.CENTER);
+        doctorsButton.addActionListener(e -> new DoctorRecordsPanel());
+        appointmentsButton.addActionListener(e -> new AllAppointmentsPanel());
+        logoutButton.addActionListener(e -> {
+            dispose();
+            new LoginFrame(); // Повернення на вікно входу
+        });
+
+        add(new JLabel("Ласкаво просимо в систему!", SwingConstants.CENTER));
+        add(doctorsButton);
+        add(appointmentsButton);
+        add(logoutButton);
+
         setVisible(true);
     }
 }

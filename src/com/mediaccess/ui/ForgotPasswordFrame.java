@@ -20,7 +20,7 @@ public class ForgotPasswordFrame extends JFrame {
         JButton sendButton = new JButton("Надіслати код");
 
         sendButton.addActionListener(e -> {
-            String email = emailField.getText();
+            String email = emailField.getText().trim();
             if (email.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Введіть email", "Помилка", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -37,12 +37,15 @@ public class ForgotPasswordFrame extends JFrame {
             }
         });
 
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         add(emailLabel, gbc);
         gbc.gridx = 1;
         add(emailField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
         add(sendButton, gbc);
 
         setVisible(true);
@@ -50,7 +53,7 @@ public class ForgotPasswordFrame extends JFrame {
 
     private JLabel createFixedLabel(String text) {
         JLabel label = new JLabel(text, SwingConstants.RIGHT);
-        label.setPreferredSize(new Dimension(180, 20));
+        label.setPreferredSize(new Dimension(180, 20));  // Під одну ширину з іншими формами
         return label;
     }
 }
